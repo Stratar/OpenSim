@@ -12,6 +12,7 @@ from collections import deque
 
 
 def traj_segment_generator(pi, env, horizon, stochastic):
+    logger.log("Generate Trajectory")
     t = 0
     ac = env.action_space.sample()  # not used, just so we have the datatype
     new = True  # marks if we're on first timestep of an episode
@@ -58,7 +59,6 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         news[i] = new
         acs[i] = ac
         prevacs[i] = prevac
-
         ob, rew, true_rew, new = env.step(ac)
 
         rews[i] = rew
@@ -122,7 +122,8 @@ def learn(env, seed, policy_fn, *,
 
     pi = policy_fn("pi", ob_space, ac_space)  # Construct network for new policy
     oldpi = policy_fn("oldpi", ob_space, ac_space)  # Network for old policy
-
+    
+    #Target advantage function calculation
     atarg = tf.placeholder(dtype=tf.float32, shape=[None])  # Target advantage function (if applicable)
     ret = tf.placeholder(dtype=tf.float32, shape=[None])  # Empirical return
 
@@ -139,6 +140,7 @@ def learn(env, seed, policy_fn, *,
     meanent = tf.reduce_mean(ent)
     pol_entpen = (-entcoeff) * meanent
 
+    #This is the r(t) part generation; Policy update part
     ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac))  # pnew / pold
     surr1 = ratio * atarg  # surrogate from conservative policy iteration
     surr2 = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg  #
@@ -163,8 +165,9 @@ def learn(env, seed, policy_fn, *,
 
     # Prepare for rollouts
     # ----------------------------------------
+    logger.log("Before the Rollouts")
     seg_gen = traj_segment_generator(pi, env, timesteps_per_actorbatch, stochastic=stochastic)
-
+    logger.log("After the Rollouts")
     episodes_so_far = 0
     timesteps_so_far = 0
     iters_so_far = 0
@@ -196,18 +199,22 @@ def learn(env, seed, policy_fn, *,
 
     assert sum([max_iters > 0, max_timesteps > 0, max_episodes > 0,
                 max_seconds > 0]) == 1, "Only one time constraint permitted"
-
     while True:
         iter_tstart = time.time()
         if callback:
+            logger.log("callback")
             callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
+            logger.log("callback")
             break
         elif max_episodes and episodes_so_far >= max_episodes:
+            logger.log("callback")
             break
         elif max_iters and iters_so_far >= max_iters:
+            logger.log("callback")
             break
         elif max_seconds and time.time() - tstart >= max_seconds:
+            logger.log("callback")
             break
 
         if schedule == 'constant':
@@ -219,6 +226,7 @@ def learn(env, seed, policy_fn, *,
 
         logger.log("********** Iteration %i ************" % iters_so_far)
         seg = seg_gen.__next__()
+        
         add_vtarg_and_adv(seg, gamma, lam)
 
         ob, ac, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]

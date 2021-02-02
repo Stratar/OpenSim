@@ -37,7 +37,7 @@ class MlpPolicy(object):
 
         with tf.variable_scope("obfilter"):
             self.ob_rms = RunningMeanStd(shape=ob_space.shape)
-
+        #This is the value network within the policy NN structure
         with tf.variable_scope('vf'):
             obz = tf.clip_by_value((ob - self.ob_rms.mean) / self.ob_rms.std, -5.0, 5.0)
 
@@ -46,7 +46,7 @@ class MlpPolicy(object):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i" % (i + 1),
                                                       kernel_initializer=U.normc_initializer(1.0)))  # tanh
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:, 0]
-
+        #The variable scope 'pol' creates the policy network for the system
         with tf.variable_scope('pol'):
             last_out = obz
             for i in range(num_hid_layers):
@@ -80,7 +80,7 @@ class MlpPolicy(object):
 
 def train(num_timesteps, seed, model_file, save_model_with_prefix, restore_model_from_file, save_after,
           load_after_iters, viz=False, stochastic=True):
-    print("Actually made it into this \n")
+    print("\n##################################THE TRAIN FUNCTION IS CALLED##################################\n")
     rank = MPI.COMM_WORLD.Get_rank()
     sess = U.single_threaded_session()
 
@@ -96,14 +96,17 @@ def train(num_timesteps, seed, model_file, save_model_with_prefix, restore_model
     with g.as_default():
         tf.set_random_seed(workerseed)
 
+    #This also gives action space and observation space
     env = ProstheticsEnvMulticlip(visualize=viz, model_file=model_file, integrator_accuracy=1e-2)
     env_string = model_file[10:-5]
 
+    #Not needed if I make a different network than the MlpPolicy
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
                          hid_size=312, num_hid_layers=2)
 
     env.seed(workerseed)
+    
     pposgd_simple.learn(env,
                         workerseed,
                         policy_fn,
@@ -137,7 +140,7 @@ if load_iters == 1:
     with open(model_file[10:-5] + '/iterations.txt', 'r') as f:
         lines = f.read().splitlines()
         # Get the last line as the last stored iteration
-        last_iter = int(lines[-1])#FOCUS ON WHY THIS IS MESSING UP
+        last_iter = int(lines[-1])
         load_iters = last_iter
         print(load_iters)
 

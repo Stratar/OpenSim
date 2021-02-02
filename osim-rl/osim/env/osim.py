@@ -31,9 +31,9 @@ class OsimModel(object):
     osim_path = os.path.dirname(__file__)
     model_name = ""
     # These paths contain the experimental data used in the study
-    k_path1 = os.path.join(os.path.dirname(__file__), '../data/stairs_up_FULL.csv')
-    k_path2 = os.path.join(os.path.dirname(__file__), '../data/stairs_up_FULL.csv')
-    k_path3 = os.path.join(os.path.dirname(__file__), '../data/stairs_up_FULL.csv')
+    k_path1 = os.path.join(os.path.dirname(__file__), '../data/075-FIX.csv')
+    k_path2 = os.path.join(os.path.dirname(__file__), '../data/125-FIX.csv')
+    k_path3 = os.path.join(os.path.dirname(__file__), '../data/175-FIX.csv')
     k_paths = [k_path1, k_path2, k_path3]
     k_paths_dict = {0.75: k_path1, 1.25: k_path2, 1.75: k_path3}
     min_length = None
@@ -534,10 +534,33 @@ class ProstheticsEnvMulticlip(OsimEnv):
         total_position_loss = ankle_loss + (1.3 * knee_loss) + (1.3 * hip_loss) + pelvis_loss
         pos_reward = np.exp(-2 * total_position_loss)
 
+        # velocity losses
+        pelvis_rot_loss_v = ((state_desc["joint_vel"]["ground_pelvis"][0] - training_data['pelvis_tilt_speed'][t])**2 +
+                            (state_desc["joint_vel"]['ground_pelvis'][2] - training_data['pelvis_rotation_speed'][t])**2 +
+                            (state_desc["joint_vel"]["ground_pelvis"][1] - training_data['pelvis_list_speed'][t])**2)
+
+        pelvis_loss_v = ((state_desc["body_vel"]['pelvis'][0] - training_data['pelvis_tx_speed'][t])**2 + 
+                        (state_desc["body_vel"]['pelvis'][1] - training_data['pelvis_ty_speed'][t])**2 +
+                        (state_desc["body_vel"]['pelvis'][2] - training_data['pelvis_tz_speed'][t])**2 )
+
+        ankle_loss_v =  ((state_desc['joint_vel']['ankle_l'] - training_data['ankle_angle_l_speed'][t])**2  + 
+                        (state_desc['joint_vel']['ankle_r'] - training_data['ankle_angle_r_speed'][t])**2 )
+
+        knee_loss_v =   ((state_desc['joint_vel']['knee_l'] - training_data['knee_angle_l_speed'][t])**2 + 
+                        (state_desc['joint_vel']['knee_r'] - training_data['knee_angle_r_speed'][t])**2)
+
+        hip_loss_v =    ((state_desc['joint_vel']['hip_l'][0] - training_data['hip_flexion_l_speed'][t])**2 + 
+                        (state_desc['joint_vel']['hip_r'][0] - training_data['hip_flexion_r_speed'][t])**2 + 
+                        (state_desc['joint_vel']['hip_l'][1] - training_data['hip_adduction_l_speed'][t])**2 + 
+                        (state_desc['joint_vel']['hip_r'][1] - training_data['hip_adduction_r_speed'][t])**2)
+
+        total_velocity_loss = ankle_loss_v + knee_loss_v + hip_loss_v 
+        velocity_reward = np.exp(-0.1*total_velocity_loss) 
+
         #Put the velocity and position rewards in one
-        im_rew = pos_reward
+        im_rew = 0.75*pos_reward + 0.25*velocity_reward
 
-
+        '''
         #Gait Target based reward
         angle_balance_constant = 17*np.pi/18
         k_force = 0.4#magic number for contralateral leg constant
@@ -561,6 +584,7 @@ class ProstheticsEnvMulticlip(OsimEnv):
         if (right_ground_contact and not left_ground_contact):
 
             #If the swing leg is still behind the contralateral, it is in the initial swing phase
+            #Should toes be checked on relative positions along x or z axis???????
             if (state_desc["body_pos"]["toes_l"][0] < state_desc["body_pos"]["toes_r"][0]):
                 vasti_target_activation =   (state_desc["muscles"]["vasti_l"]["activation"] +
                                                             state_desc["muscles"]["vasti_l"]["fiber_force"] - 
@@ -575,16 +599,16 @@ class ProstheticsEnvMulticlip(OsimEnv):
                 iliopsoas_target_activation =    (state_desc["muscles"]["iliopsoas_l"]["activation"] + k_phi*state_desc["body_pos_rot"]["pelvis"][2] +
                                                                 k_force*state_desc["muscles"]["iliopsoas_l"]["fiber_force"])
 
-                iliopsoas_loss = (state_desc["muscles"]["ilipsoas_l"]["activation"] - iliopsoas_target_activation)**2
+                iliopsoas_loss = (state_desc["muscles"]["iliopsoas_l"]["activation"] - iliopsoas_target_activation)**2
 
                 gait_rew += iliopsoas_loss
-
+            #Check what the hamstring length should be, also need iliopsoas length????
             elif state_desc["body_pos"]["toes_l"][0] > state_desc["body_pos"]["toes_r"][0] and state_desc["muscles"]["hamstrings_l"]["fiber_length"] >= ham_len_threshold:
                 
                 iliopsoas_target_activation =    (state_desc["muscles"]["iliopsoas_l"]["activation"] + k_phi*state_desc["body_pos_rot"]["pelvis"][2] +
                                                                 state_desc["muscles"]["iliopsoas_l"]["fiber_length"] - state_desc["muscles"]["hamstrings_l"]["fiber_length"])
 
-                iliopsoas_loss = (state_desc["muscles"]["ilipsoas_l"]["activation"] - iliopsoas_target_activation)**2
+                iliopsoas_loss = (state_desc["muscles"]["iliopsoas_l"]["activation"] - iliopsoas_target_activation)**2
 
                 glut_target_activation =        state_desc["muscles"]["glut_max_l"]["activation"] + state_desc["muscles"]["glut_max_l"]["fiber_length"] 
 
@@ -632,6 +656,8 @@ class ProstheticsEnvMulticlip(OsimEnv):
 
                 gait_rew += iliopsoas_loss + glut_loss + hamstring_loss
 
+        '''
+
         #For the ground reaction forces detection, use "foot_l" or "foot_r", 
         #maybe use a bool variable to tag which foot is touching the ground
         #if state_desc['forces'][foot][:6] for initiating swing phase #state_desc['forces'][foot][1] for the y-forces? 
@@ -660,10 +686,18 @@ class ProstheticsEnvMulticlip(OsimEnv):
         glut_target_activation =        state_desc["muscles"]["glut"]["activation"] + state_desc["muscles"]["glut"]["fiber_length"]                             
         hamstring_target_activation =   state_desc["muscles"]["hamstring"]["activation"] + state_desc["muscles"]["hamstring"]["fiber_length"]
         '''
+        '''
         if t <= 50:
             return 0.1 * im_rew + 0.8 * goal_rew + 0.1 * gait_rew, 10 - penalty
 
+        #Check reward ratios
         return 0.35 * im_rew + 0.35 * goal_rew + 0.3 * gait_rew, 10 - penalty
+        '''
+        if t <= 50:
+            return 0.1 * im_rew + 0.9 * goal_rew, 10 - penalty
+
+        #Check reward ratios
+        return 0.6 * im_rew + 0.4 * goal_rew, 10 - penalty
 
     def reset(self, test, project=True):
         self.istep = 0
