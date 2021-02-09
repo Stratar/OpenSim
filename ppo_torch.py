@@ -135,11 +135,16 @@ class ActorNetwork(nn.Module):
 
     def save_checkpoint(self, checkpoint_file):
         checkpoint_file += self.checkpoint
-        T.save(self.state_dict(), os.path.normpath(checkpoint_file))
+        T.save({'state_dict': self.state_dict(), 
+                'optimizer': self.optimizer.state_dict()}, 
+                os.path.normpath(checkpoint_file))
 
     def load_checkpoint(self, checkpoint_file):
         checkpoint_file += self.checkpoint
-        self.load_state_dict(T.load(os.path.normpath(checkpoint_file)))
+
+        checkpoint = T.load(os.path.normpath(checkpoint_file))
+        self.load_state_dict(checkpoint['state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
 
 class CriticNetwork(nn.Module):
     def __init__(self, input_dims, alpha, fc1_dims=312, fc2_dims=312):
@@ -167,11 +172,16 @@ class CriticNetwork(nn.Module):
 
     def save_checkpoint(self, checkpoint_file):
         checkpoint_file += self.checkpoint
-        T.save(self.state_dict(), os.path.normpath(checkpoint_file))
+        T.save({'state_dict': self.state_dict(), 
+                'optimizer': self.optimizer.state_dict()}, 
+                os.path.normpath(checkpoint_file))
 
     def load_checkpoint(self, checkpoint_file):
         checkpoint_file += self.checkpoint
-        self.load_state_dict(T.load(os.path.normpath(checkpoint_file)))
+
+        checkpoint = T.load(os.path.normpath(checkpoint_file))
+        self.load_state_dict(checkpoint['state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
 
 class Agent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,

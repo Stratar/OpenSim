@@ -1,4 +1,4 @@
-name: opensim-rl-a
+name: opensim-rl-s
 channels:
   - kidzik
   - conda-forge
@@ -47,7 +47,6 @@ dependencies:
   - setuptools=49.2.0=py36_0
   - sqlite=3.32.3=h62c20be_0
   - tk=8.6.10=hbc83047_0
-  - torch
   - wheel=0.34.2=py36_0
   - xz=5.2.5=h7b6447c_0
   - zlib=1.2.11=h7b6447c_3

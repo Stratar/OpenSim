@@ -3,8 +3,8 @@ import os
 import subprocess
 
 # Every 3 hours a new process is started
-#max_seconds = 10800
-max_seconds = 900
+max_seconds = 10800
+#max_seconds = 900
 tstart = time.time()
 last_timestep = 0
 max_timesteps = 12000000
@@ -28,7 +28,7 @@ except FileExistsError as e:
 
 #Change this if calling the altMain.py and adjust args accordingly
 #args = ["mpirun", "-np", "4", "python", "main.py", "0", "0", f"../models/{exp_model}"]
-args = ["mpirun", "-np", "4", "python", "altMain.py", "0", "0", f"../models/{exp_model}"]
+args = ["mpirun", "-np", "2", "python", "altMain.py", "0", "0", f"../models/{exp_model}"]
 
 proc = subprocess.Popen(args)
 
@@ -48,7 +48,7 @@ while last_timestep < max_timesteps:
             last_timestep = int(lines[-1])
 
         tstart = time.time()
-        args = ["mpirun", "-np", "4", "python", "altMain.py", "1", "1", f"../models/{exp_model}"]
+        args = ["mpirun", "-np", "2", "python", "altMain.py", "1", "1", f"../models/{exp_model}"]
         proc = subprocess.Popen(args)
 
 subprocess.Popen.kill(proc)
