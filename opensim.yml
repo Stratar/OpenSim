@@ -1,4 +1,4 @@
-name: opensim-rl-s
+name: opensim-rl-new
 channels:
   - kidzik
   - conda-forge
@@ -98,7 +98,6 @@ dependencies:
     - tensorflow-estimator==1.15.1
     - termcolor==1.1.0
     - timeout-decorator==0.4.1
-    - torch==1.7.1
     - tqdm==4.48.2
     - werkzeug==1.0.1
     - wrapt==1.12.1

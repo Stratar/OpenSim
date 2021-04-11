@@ -98,7 +98,7 @@ def train(num_timesteps, seed, model_file, save_model_with_prefix, restore_model
 
     #This also gives action space and observation space
     env = ProstheticsEnvMulticlip(visualize=viz, model_file=model_file, integrator_accuracy=1e-2)
-    env_string = model_file[10:-5]
+    env_string = model_file[10:-5] + "_original"
 
     #Not needed if I make a different network than the MlpPolicy
     def policy_fn(name, ob_space, ac_space):

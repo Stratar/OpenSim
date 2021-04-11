@@ -1,0 +1,50 @@
+{
+    "ac_kwargs":	{
+        "hidden_sizes":	[
+            312,
+            312
+        ]
+    },
+    "act_noise":	0.1,
+    "actor_critic":	"MLPActorCritic",
+    "batch_size":	128,
+    "env_fn":	"<function <lambda> at 0x7f47980837b8>",
+    "epochs":	825,
+    "exp_name":	"ddpg",
+    "gamma":	0.99,
+    "load_after_iters":	25,
+    "logger":	{
+        "<utils.logx.EpochLogger object at 0x7f4798088cf8>":	{
+            "epoch_dict":	{},
+            "exp_name":	"ddpg",
+            "first_row":	true,
+            "log_current_row":	{},
+            "log_headers":	[],
+            "output_dir":	"/home/sm/Documents/Wot/data/ddpg/ddpg_s0",
+            "output_file":	{
+                "<_io.TextIOWrapper name='/home/sm/Documents/Wot/data/ddpg/ddpg_s0/progress.txt' mode='w' encoding='UTF-8'>":	{
+                    "mode":	"w"
+                }
+            }
+        }
+    },
+    "logger_kwargs":	{
+        "exp_name":	"ddpg",
+        "output_dir":	"/home/sm/Documents/Wot/data/ddpg/ddpg_s0"
+    },
+    "max_ep_len":	1000,
+    "num_test_episodes":	10,
+    "pi_lr":	0.001,
+    "polyak":	0.995,
+    "q_lr":	0.001,
+    "replay_size":	1000000,
+    "restore_model_from_file":	1,
+    "save_after":	5,
+    "save_freq":	1,
+    "save_prefix":	"Pendulum-v0",
+    "seed":	0,
+    "start_steps":	10000,
+    "steps_per_epoch":	1000,
+    "update_after":	250,
+    "update_every":	64
+}
